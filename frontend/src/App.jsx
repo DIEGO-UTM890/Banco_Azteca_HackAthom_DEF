@@ -1,21 +1,27 @@
 import React, { useState } from 'react';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('simulator');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   // Perfil del Usuario
   const [xp, setXp] = useState(1250);
   const [score, setScore] = useState(680);
-  const weeklyIncome = 3500; // Salario semanal simulado
+  const weeklyIncome = 3500;
+
+  // Datos financieros del perfil (Deuda activa)
+  const currentDebt = 12500;
+  const activeWeeklyPayment = 350;
+  const remainingPayments = 38;
 
   // Estados del simulador
   const [amount, setAmount] = useState(5000);
   const [weeks, setWeeks] = useState(52);
 
-  // Estado para mostrar Copiloto solo al confirmar
+  // Estado para alertas
   const [showCopilot, setShowCopilot] = useState(false);
+  const [understandRisk, setUnderstandRisk] = useState(false);
 
-  // Lógica Financiera (Tasa simplificada Banco Azteca Hackathon ~60% anual)
+  // Lógica Financiera
   const annualInterestRate = 0.60;
   const interestRateForPeriod = annualInterestRate * (weeks / 52);
   const totalInterest = amount * interestRateForPeriod;
@@ -26,31 +32,36 @@ function App() {
   const isOverleveraged = weeklyPayment > (weeklyIncome * 0.40);
   const isTooLong = weeks >= 80;
 
-  // Plan de Rescate (Acción del Copiloto)
+  // Plan de Rescate
   const acceptRescuePlan = () => {
-    // Reestructuramos el plazo
     setWeeks(52);
     setShowCopilot(false);
+    setUnderstandRisk(false);
     setXp(xp + 100);
     setScore(score + 15);
-    alert("¡Rescate Exitoso! Copiloto reestructuró tu préstamo. Tu Score ha mejorado por aceptar la ayuda financiera. (+100 XP)");
+    alert("¡Rescate Exitoso! Copiloto reestructuró tu préstamo. Tu Score ha mejorado por aceptar la ayuda financiera.");
+  };
+
+  const forceBadLoan = () => {
+    setShowCopilot(false);
+    setUnderstandRisk(false);
+    setScore(score - 80); // Gran penalización
+    alert("Préstamo de alto riesgo confirmado. Tu Score crediticio ha sido gravemente penalizado por endeudamiento excesivo.");
   };
 
   // Botón Confirmar Tramite
   const handleSimulateAction = () => {
-    // Si cruza la asfixia crediticia, en lugar de procesar, lanzamos Copiloto IA
     if (isOverleveraged) {
       setShowCopilot(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       setXp(xp + 50);
-      alert("¡Simulación responsable guardada en base de datos! Avanzas hacia tu próxima insignia. (+50 XP)");
+      alert("¡Simulación responsable guardada en base de datos! Avanzas hacia tu próxima insignia.");
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      {/* Navbar Minimalista */}
       <header className="bg-white shadow relative z-10 border-b-4 border-green-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -101,10 +112,10 @@ function App() {
           <div className="animate-in fade-in duration-500">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900">Tu Perfil Crediticio</h1>
-              <p className="text-gray-600 mt-1">Acumula XP tomando buenas decisiones en el simulador.</p>
+              <p className="text-gray-600 mt-1">Acumula experiencia tomando buenas decisiones.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               {/* Score Card */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col items-center justify-center text-center">
                 <p className="text-gray-500 font-medium mb-2">Score de Salud Azteca</p>
@@ -117,7 +128,27 @@ function App() {
                     {score}
                   </span>
                 </div>
-                <p className="mt-4 text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">Camino a Tarjeta de Crédito 💳</p>
+                <p className="mt-4 text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">Camino a Tarjeta de Crédito</p>
+              </div>
+
+              {/* Deuda Activa Card */}
+              {/* Nuevo elemento solicitado por el usuario */}
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col justify-center">
+                <p className="text-gray-500 font-medium mb-2">Estado de Cuenta</p>
+                <div className="mb-4">
+                  <span className="text-sm text-gray-500 block">Saldo Actual (Deuda)</span>
+                  <span className="text-3xl font-bold text-gray-900">${currentDebt.toLocaleString('es-MX')}</span>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <div className="flex justify-between items-center mb-2 text-sm">
+                    <span className="text-gray-600">Pago exigible:</span>
+                    <span className="font-bold text-gray-900">${activeWeeklyPayment} / sem</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Pagos restantes:</span>
+                    <span className="font-bold text-gray-900">{remainingPayments}</span>
+                  </div>
+                </div>
               </div>
 
               {/* XP Card */}
@@ -127,7 +158,7 @@ function App() {
                     <p className="text-gray-500 font-medium">Nivel 2: Explorador Financiero</p>
                     <p className="text-3xl font-bold text-gray-900 mt-1">{xp} XP</p>
                   </div>
-                  <div className="text-4xl">🚀</div>
+                  <div className="h-8 w-8 bg-blue-100 rounded text-blue-600 flex items-center justify-center font-bold text-xs">[ICON_XP]</div>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-3 mb-2">
                   <div className="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full" style={{ width: `${(xp / 2000) * 100}%` }}></div>
@@ -141,7 +172,6 @@ function App() {
         {/* SIMULATOR TAB */}
         {activeTab === 'simulator' && (
           <div className="animate-in fade-in duration-500">
-            {/* Header Simulator */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 space-y-4 md:space-y-0">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 flex items-center">
@@ -151,41 +181,64 @@ function App() {
               </div>
             </div>
 
-            {/* COPILOTO INTERVENCIÓN (ALERTA ROJA - SOLO APARECE AL CONFIRMAR MAL PLAN) */}
+            {/* COPILOTO INTERVENCIÓN */}
             {showCopilot && (
               <div className="mb-8 animate-in zoom-in duration-300 relative overflow-hidden bg-gradient-to-br from-slate-900 to-blue-900 rounded-2xl shadow-2xl p-1">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
-                  <svg className="w-24 h-24 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" /></svg>
+                  {/* Placeholder Background SVG */}
+                  <div className="w-24 h-24 bg-white opacity-20 rounded-full"></div>
                 </div>
                 <div className="bg-slate-900/80 backdrop-blur-md rounded-xl p-6 sm:p-8 flex flex-col md:flex-row items-center gap-6 relative z-10 border border-slate-700">
                   <div className="flex-shrink-0 animate-pulse bg-blue-500/20 p-4 rounded-full border 2 border-blue-400/50">
-                    <span className="text-5xl">🤖</span>
+                    <div className="text-blue-300 text-sm font-bold text-center">[ICON_BOT]</div>
                   </div>
-                  <div className="flex-1">
+
+                  <div className="flex-1 w-full">
                     <h3 className="text-xl font-bold text-blue-400 mb-2 flex items-center">
-                      COPILOTO AZTECA: ALERTA DE ASFIXIA FINANCIERA
+                      ALERTA DE ASFIXIA FINANCIERA
                     </h3>
-                    <p className="text-slate-200 text-sm md:text-base leading-relaxed mb-3">
+                    <p className="text-slate-200 text-sm md:text-base leading-relaxed mb-4">
                       Detecto que has programado un pago de <strong className="text-red-400">${Math.round(weeklyPayment)}/sem</strong>. Esto equivale a más del 40% de tu sueldo simulado ($3,500). En la vida real, un pago tan alto provocará recargos y arruinará tu historial.
                     </p>
-                    <p className="text-yellow-300 text-sm font-bold">
-                      TRÁMITE DETENIDO PARA PROTEGER TU SALUD MONETARIA.
-                    </p>
+
+                    {/* Verificación de Riesgo - NUEVA FUNCIONALIDAD */}
+                    <div className="bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4">
+                      <label className="flex items-start space-x-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="mt-1 w-5 h-5 accent-red-500 cursor-pointer"
+                          checked={understandRisk}
+                          onChange={(e) => setUnderstandRisk(e.target.checked)}
+                        />
+                        <span className="text-sm text-slate-300">
+                          Comprendo que este crédito supera mi capacidad de pago. Entiendo que continuar provocará una caída severa en mi Score Crediticio.
+                        </span>
+                      </label>
+                    </div>
+
                   </div>
-                  <div className="flex-shrink-0 w-full md:w-auto flex flex-col space-y-2">
+                  <div className="flex-shrink-0 w-full md:w-64 flex flex-col space-y-3">
                     <button
                       onClick={acceptRescuePlan}
-                      className="w-full relative group overflow-hidden bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)]"
+                      className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-[0_0_15px_rgba(37,99,235,0.4)]"
                     >
-                      <span className="relative z-10 flex items-center justify-center">
-                        Aceptar Plan Rescate <span className="ml-2">✨</span>
-                      </span>
+                      Aceptar Plan Rescate
                     </button>
                     <button
-                      onClick={() => setShowCopilot(false)}
-                      className="w-full text-slate-400 hover:text-white text-sm font-medium py-2 px-6 transition-colors"
+                      onClick={forceBadLoan}
+                      disabled={!understandRisk}
+                      className={`w-full py-3 px-4 rounded-xl font-bold transition-all ${understandRisk
+                          ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg'
+                          : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                        }`}
                     >
-                      Editar barras manual
+                      Continuar Riesgo
+                    </button>
+                    <button
+                      onClick={() => { setShowCopilot(false); setUnderstandRisk(false); }}
+                      className="w-full text-slate-400 hover:text-white text-sm font-medium py-2 px-4 transition-colors text-center"
+                    >
+                      Volver a editar barras
                     </button>
                   </div>
                 </div>
@@ -194,79 +247,96 @@ function App() {
 
             <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 ${showCopilot ? 'opacity-50 pointer-events-none' : ''}`}>
 
-              {/* Controles (Izquierda) */}
               <div className="lg:col-span-7 space-y-6">
 
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 transition-colors">
                   <h2 className="text-lg font-bold text-gray-800 mb-6 border-b pb-4">Ajustes del Préstamo</h2>
 
-                  {/* Monto */}
+                  {/* Monto con Input Tipo Número */}
                   <div className="mb-8">
-                    <div className="flex justify-between mb-2">
-                      <label className="font-semibold text-gray-600 text-sm uppercase tracking-wide">Monto</label>
-                      <span className="font-bold text-2xl text-green-600">
-                        ${amount.toLocaleString('es-MX')}
-                      </span>
+                    <div className="flex justify-between items-end mb-4">
+                      <label className="font-semibold text-gray-600 text-sm uppercase tracking-wide">Monto Solicitado</label>
+                      <div className="flex items-center bg-gray-50 border border-gray-300 rounded-lg px-3 py-1">
+                        <span className="text-gray-500 font-bold mr-1">$</span>
+                        <input
+                          type="number"
+                          min="1000"
+                          max="50000"
+                          value={amount}
+                          onChange={(e) => {
+                            setAmount(Number(e.target.value));
+                            setShowCopilot(false);
+                            setUnderstandRisk(false);
+                          }}
+                          className="font-bold text-xl text-green-600 bg-transparent outline-none w-24 text-right"
+                        />
+                      </div>
                     </div>
                     <input
-                      type="range" min="1000" max="20000" step="500"
+                      type="range" min="1000" max="50000" step="100"
                       value={amount}
                       onChange={(e) => {
                         setAmount(Number(e.target.value));
                         setShowCopilot(false);
+                        setUnderstandRisk(false);
                       }}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
                     />
                   </div>
 
-                  {/* Plazo */}
+                  {/* Plazo con Input Tipo Número */}
                   <div className="mb-4">
-                    <div className="flex justify-between mb-2">
+                    <div className="flex justify-between items-end mb-4">
                       <label className="font-semibold text-gray-600 text-sm uppercase tracking-wide">Plazo a pagar</label>
-                      <span className="font-bold text-xl text-gray-800">
-                        {weeks} semanas
-                      </span>
+                      <div className="flex items-center bg-gray-50 border border-gray-300 rounded-lg px-3 py-1">
+                        <input
+                          type="number"
+                          min="1"
+                          max="154"
+                          value={weeks}
+                          onChange={(e) => {
+                            setWeeks(Number(e.target.value));
+                            setShowCopilot(false);
+                            setUnderstandRisk(false);
+                          }}
+                          className="font-bold text-xl text-gray-800 bg-transparent outline-none w-16 text-right mr-1"
+                        />
+                        <span className="text-gray-500 font-bold">sem</span>
+                      </div>
                     </div>
                     <input
-                      type="range" min="13" max="104" step="13"
+                      type="range" min="13" max="154" step="1"
                       value={weeks}
                       onChange={(e) => {
                         setWeeks(Number(e.target.value));
                         setShowCopilot(false);
+                        setUnderstandRisk(false);
                       }}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
                     />
                     <div className="flex justify-between text-xs text-gray-400 mt-2 font-medium">
-                      <span>Corto (Pagos altos, menos intereses)</span>
-                      <span>Largo (Pago bajito, más intereses)</span>
+                      <span>Corto Plazo</span>
+                      <span>Largo Plazo</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Traductor Ciudadano Normal */}
                 {!isOverleveraged && isTooLong && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5 flex items-start space-x-4">
-                    <div className="text-2xl mt-1">🧐</div>
+                    <div className="bg-yellow-200 w-8 h-8 rounded shrink-0 flex items-center justify-center text-yellow-800 text-xs font-bold">[ICON]</div>
                     <div>
                       <h4 className="font-bold text-yellow-800">Traductor del Asesor: CAT Elevado</h4>
                       <p className="text-sm text-yellow-700 mt-1">
-                        Elegir 104 semanas hará que des pagos chiquitos de solo ${Math.round(weeklyPayment)}, suena genial... pero nota en tu ticket cómo los "Intereses Pagados" suben muchísimo. El banco gana más mientras más tardes.
+                        Elegir plazos extremadamente largos hará que des pagos chiquitos, pero nota en tu ticket cómo los "Intereses Pagados" suben muchísimo.
                       </p>
                     </div>
                   </div>
                 )}
 
-                <div className="bg-gray-100 rounded-xl p-4 flex justify-between items-center text-sm text-gray-600 border border-gray-200">
-                  <span className="font-medium">Tu Salario Simulado:</span>
-                  <span className="font-bold text-gray-800">$3,500 MXN / Semana</span>
-                </div>
-
               </div>
 
-              {/* Resultados (Ticket - Derecha) */}
               <div className="lg:col-span-5">
                 <div className="bg-gray-900 rounded-2xl shadow-xl flex flex-col overflow-hidden sticky top-6">
-                  {/* Recibo Header */}
                   <div className="p-6 pb-0 border-b border-gray-800 mx-6 mb-4">
                     <p className="text-center text-gray-500 font-mono text-sm tracking-widest mb-2">TICKET DE SIMULACIÓN</p>
                   </div>
@@ -287,7 +357,7 @@ function App() {
                         <span className="text-white">${amount.toLocaleString('es-MX')}</span>
                       </div>
                       <div className="flex justify-between border-b border-gray-800 pb-2">
-                        <span className="text-gray-400">Intereses Totales (Estimado):</span>
+                        <span className="text-gray-400">Intereses Estimados:</span>
                         <span className="text-yellow-500">+ ${Math.round(totalInterest).toLocaleString('es-MX')}</span>
                       </div>
                       <div className="flex justify-between pt-2 text-base">
