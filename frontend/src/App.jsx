@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 function App() {
   const [activeTab, setActiveTab] = useState('simulator');
@@ -6,12 +6,14 @@ function App() {
   // Perfil del Usuario
   const [xp, setXp] = useState(1250);
   const [score, setScore] = useState(680);
-  const weeklyIncome = 3500; // Salario semanal simulado (Ej: recién egresado/joven)
+  const weeklyIncome = 3500; // Salario semanal simulado
 
   // Estados del simulador
   const [amount, setAmount] = useState(5000);
   const [weeks, setWeeks] = useState(52);
-  const [crisisActive, setCrisisActive] = useState(false);
+
+  // Estado para mostrar Copiloto solo al confirmar
+  const [showCopilot, setShowCopilot] = useState(false);
 
   // Lógica Financiera (Tasa simplificada Banco Azteca Hackathon ~60% anual)
   const annualInterestRate = 0.60;
@@ -20,38 +22,29 @@ function App() {
   const totalToPay = amount + totalInterest;
   const weeklyPayment = totalToPay / weeks;
 
-  // Triggers de Inteligencia Artificial (Copiloto)
-  // ¿El pago supera el 40% de su sueldo? Riesgo de asfixia (impago)
+  // Triggers Financieros
   const isOverleveraged = weeklyPayment > (weeklyIncome * 0.40);
-  // ¿El plazo es excesivo? CAT altísimo.
   const isTooLong = weeks >= 80;
-
-  // Handler para Evento de Crisis (Bola de nieve)
-  const triggerCrisisEvent = () => {
-    setCrisisActive(true);
-    setAmount(20000); // Gasto fuerte
-    setWeeks(13); // Intenta pagarlo rápido pero es imposible con su sueldo
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   // Plan de Rescate (Acción del Copiloto)
   const acceptRescuePlan = () => {
-    // Calculamos el plazo ideal para que el pago quede en ~30% de sus ingresos ($1050)
-    // Para 20k, 52 semanas da aprox $615 (sano).
+    // Reestructuramos el plazo
     setWeeks(52);
-    setCrisisActive(false);
+    setShowCopilot(false);
     setXp(xp + 100);
     setScore(score + 15);
     alert("¡Rescate Exitoso! Copiloto reestructuró tu préstamo. Tu Score ha mejorado por aceptar la ayuda financiera. (+100 XP)");
   };
 
+  // Botón Confirmar Tramite
   const handleSimulateAction = () => {
+    // Si cruza la asfixia crediticia, en lugar de procesar, lanzamos Copiloto IA
     if (isOverleveraged) {
-      setScore(score - 50);
-      alert("Simulación guardada, pero tu decisión fue riesgosa. Tomar una deuda que no puedes pagar bajó tu Score Crediticio.");
+      setShowCopilot(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       setXp(xp + 50);
-      alert("¡Simulación responsable guardada! Avanzas hacia tu próxima insignia. (+50 XP)");
+      alert("¡Simulación responsable guardada en base de datos! Avanzas hacia tu próxima insignia. (+50 XP)");
     }
   };
 
@@ -72,7 +65,7 @@ function App() {
 
             <nav className="flex space-x-2 sm:space-x-4">
               <button
-                onClick={() => setActiveTab('dashboard')}
+                onClick={() => { setActiveTab('dashboard'); setShowCopilot(false); }}
                 className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'dashboard'
                     ? 'bg-green-100 text-green-800'
                     : 'text-gray-600 hover:bg-gray-100'
@@ -87,7 +80,7 @@ function App() {
                     : 'text-gray-600 hover:bg-gray-100'
                   }`}
               >
-                Simulador IA
+                Simulador
               </button>
             </nav>
 
@@ -152,21 +145,15 @@ function App() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 space-y-4 md:space-y-0">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                  Simulador <span className="ml-2 bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-md uppercase font-bold tracking-wider">Impulsado por IA</span>
+                  Simulador de Crédito Personal
                 </h1>
                 <p className="text-gray-600 mt-1">Prueba decisiones financieras en un entorno de riesgo cero.</p>
               </div>
-              <button
-                onClick={triggerCrisisEvent}
-                className="bg-red-50 hover:bg-red-100 text-red-600 font-bold border border-red-200 py-2 px-4 rounded-xl shadow-sm transition-transform active:scale-95 flex items-center shadow-red-100"
-              >
-                <span className="mr-2">🔥</span> Botón de Crisis Inesperada
-              </button>
             </div>
 
-            {/* COPILOTO INTERVENCIÓN ACTIVA (ALERTA ROJA) */}
-            {isOverleveraged && (
-              <div className="mb-8 animate-in slide-in-from-top-4 relative overflow-hidden bg-gradient-to-br from-slate-900 to-blue-900 rounded-2xl shadow-2xl p-1">
+            {/* COPILOTO INTERVENCIÓN (ALERTA ROJA - SOLO APARECE AL CONFIRMAR MAL PLAN) */}
+            {showCopilot && (
+              <div className="mb-8 animate-in zoom-in duration-300 relative overflow-hidden bg-gradient-to-br from-slate-900 to-blue-900 rounded-2xl shadow-2xl p-1">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
                   <svg className="w-24 h-24 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" /></svg>
                 </div>
@@ -178,38 +165,40 @@ function App() {
                     <h3 className="text-xl font-bold text-blue-400 mb-2 flex items-center">
                       COPILOTO AZTECA: ALERTA DE ASFIXIA FINANCIERA
                     </h3>
-                    <p className="text-slate-200 text-sm md:text-base leading-relaxed">
-                      Detecto que has programado un pago de <strong className="text-red-400">${Math.round(weeklyPayment)}/sem</strong>. Esto equivale a más del 40% de tu sueldo simulado ($3,500). En la vida real, un pago tan alto provocará que no te alcance para la renta o comida, cayendo en impago y arruinando tu historial.
+                    <p className="text-slate-200 text-sm md:text-base leading-relaxed mb-3">
+                      Detecto que has programado un pago de <strong className="text-red-400">${Math.round(weeklyPayment)}/sem</strong>. Esto equivale a más del 40% de tu sueldo simulado ($3,500). En la vida real, un pago tan alto provocará recargos y arruinará tu historial.
+                    </p>
+                    <p className="text-yellow-300 text-sm font-bold">
+                      TRÁMITE DETENIDO PARA PROTEGER TU SALUD MONETARIA.
                     </p>
                   </div>
-                  <div className="flex-shrink-0 w-full md:w-auto">
+                  <div className="flex-shrink-0 w-full md:w-auto flex flex-col space-y-2">
                     <button
                       onClick={acceptRescuePlan}
                       className="w-full relative group overflow-hidden bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-[0_0_20px_rgba(37,99,235,0.4)]"
                     >
                       <span className="relative z-10 flex items-center justify-center">
-                        Aceptar Plan de Rescate <span className="ml-2">✨</span>
+                        Aceptar Plan Rescate <span className="ml-2">✨</span>
                       </span>
+                    </button>
+                    <button
+                      onClick={() => setShowCopilot(false)}
+                      className="w-full text-slate-400 hover:text-white text-sm font-medium py-2 px-6 transition-colors"
+                    >
+                      Editar barras manual
                     </button>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 ${showCopilot ? 'opacity-50 pointer-events-none' : ''}`}>
 
               {/* Controles (Izquierda) */}
               <div className="lg:col-span-7 space-y-6">
 
-                {/* Panel principal de barras */}
-                <div className={`bg-white rounded-2xl shadow-sm border p-6 sm:p-8 transition-colors ${crisisActive ? 'border-red-300 ring-4 ring-red-50' : 'border-gray-200'}`}>
-                  {crisisActive && (
-                    <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg font-bold mb-6 animate-pulse border border-red-200">
-                      🚨 CRISIS: "Tu refrigerador se quemó y necesitas una computadora nueva urgente. El sistema ajustó tu deuda a $20,000. Resuélvelo."
-                    </div>
-                  )}
-
-                  <h2 className="text-lg font-bold text-gray-800 mb-6">Ajustes del Préstamo</h2>
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 transition-colors">
+                  <h2 className="text-lg font-bold text-gray-800 mb-6 border-b pb-4">Ajustes del Préstamo</h2>
 
                   {/* Monto */}
                   <div className="mb-8">
@@ -222,7 +211,10 @@ function App() {
                     <input
                       type="range" min="1000" max="20000" step="500"
                       value={amount}
-                      onChange={(e) => { setAmount(Number(e.target.value)); setCrisisActive(false); }}
+                      onChange={(e) => {
+                        setAmount(Number(e.target.value));
+                        setShowCopilot(false);
+                      }}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
                     />
                   </div>
@@ -238,30 +230,32 @@ function App() {
                     <input
                       type="range" min="13" max="104" step="13"
                       value={weeks}
-                      onChange={(e) => { setWeeks(Number(e.target.value)); setCrisisActive(false); }}
+                      onChange={(e) => {
+                        setWeeks(Number(e.target.value));
+                        setShowCopilot(false);
+                      }}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
                     />
                     <div className="flex justify-between text-xs text-gray-400 mt-2 font-medium">
-                      <span>Corto (Pagos altos)</span>
+                      <span>Corto (Pagos altos, menos intereses)</span>
                       <span>Largo (Pago bajito, más intereses)</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Traductor Ciudadano Normal (Aparece si el plazo es muy largo y NO hay asfixia) */}
+                {/* Traductor Ciudadano Normal */}
                 {!isOverleveraged && isTooLong && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5 flex items-start space-x-4">
                     <div className="text-2xl mt-1">🧐</div>
                     <div>
                       <h4 className="font-bold text-yellow-800">Traductor del Asesor: CAT Elevado</h4>
                       <p className="text-sm text-yellow-700 mt-1">
-                        Elegir 104 semanas hará que des pagos chiquitos de solo ${Math.round(weeklyPayment)}, suena genial... pero nota cómo los "Intereses Pagados" suben muchísimo. El banco gana más mientras más tardes.
+                        Elegir 104 semanas hará que des pagos chiquitos de solo ${Math.round(weeklyPayment)}, suena genial... pero nota en tu ticket cómo los "Intereses Pagados" suben muchísimo. El banco gana más mientras más tardes.
                       </p>
                     </div>
                   </div>
                 )}
 
-                {/* Ingresos simulados info box */}
                 <div className="bg-gray-100 rounded-xl p-4 flex justify-between items-center text-sm text-gray-600 border border-gray-200">
                   <span className="font-medium">Tu Salario Simulado:</span>
                   <span className="font-bold text-gray-800">$3,500 MXN / Semana</span>
@@ -293,7 +287,7 @@ function App() {
                         <span className="text-white">${amount.toLocaleString('es-MX')}</span>
                       </div>
                       <div className="flex justify-between border-b border-gray-800 pb-2">
-                        <span className="text-gray-400">Intereses Totales (CAT):</span>
+                        <span className="text-gray-400">Intereses Totales (Estimado):</span>
                         <span className="text-yellow-500">+ ${Math.round(totalInterest).toLocaleString('es-MX')}</span>
                       </div>
                       <div className="flex justify-between pt-2 text-base">
@@ -304,13 +298,9 @@ function App() {
 
                     <button
                       onClick={handleSimulateAction}
-                      disabled={isOverleveraged}
-                      className={`w-full py-4 rounded-xl font-bold text-lg transition-all ${isOverleveraged
-                          ? 'bg-gray-700 text-gray-500 cursor-not-allowed border border-gray-600'
-                          : 'bg-green-500 hover:bg-green-400 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]'
-                        }`}
+                      className="w-full py-4 rounded-xl font-bold text-lg transition-all bg-green-500 hover:bg-green-400 text-white shadow-[0_0_15px_rgba(34,197,94,0.4)]"
                     >
-                      {isOverleveraged ? 'Acepta Rescate para Continuar' : 'Confimar y Ganar XP'}
+                      Confirmar
                     </button>
                   </div>
                 </div>
