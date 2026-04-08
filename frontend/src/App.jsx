@@ -1,25 +1,21 @@
 import React, { useState, useEffect } from 'react';
 
 function App() {
-  // Estado general de Navegación 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showStoryMode, setShowStoryMode] = useState(true); // <--- NUEVO ESTADO PARA EL VERTICAL SLICE
-  const [storyStep, setStoryStep] = useState(1); // 1: Hook, 2: Trampa, 3: Victoria
+  const [showStoryMode, setShowStoryMode] = useState(true);
+  const [storyStep, setStoryStep] = useState(1);
 
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Login States Simulados
   const [loginUser, setLoginUser] = useState('7712345678');
   const [loginPass, setLoginPass] = useState('123456');
 
-  // Usuario y Perfil
   const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState('Cargando...');
   const [xp, setXp] = useState(0);
   const [score, setScore] = useState(680);
 
   const weeklyIncome = 3500;
-  const monthlyIncome = weeklyIncome * 4;
 
   const [walletMoney, setWalletMoney] = useState(4000);
   const [currentDebt, setCurrentDebt] = useState(0);
@@ -28,18 +24,26 @@ function App() {
 
   const [depositAmount, setDepositAmount] = useState(3500);
 
+  // ESTADOS DEL SIMULADOR MULTI-PRODUCTO
+  const [productType, setProductType] = useState('PRESTAMO'); // 'PRESTAMO' | 'TC' | 'CONSUMO'
   const [amount, setAmount] = useState(5000);
   const [weeks, setWeeks] = useState(52);
   const [showCopilot, setShowCopilot] = useState(false);
   const [understandRisk, setUnderstandRisk] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
 
-  const annualInterestRate = 0.60;
+  // Lógica Financiera Dinámica basada en el Producto
+  let annualInterestRate = 0.60;
+  if (productType === 'TC') annualInterestRate = 0.85; // Tarjeta de Crédito = Tasa alta
+  if (productType === 'CONSUMO') annualInterestRate = 1.10; // Tiendas físicas = Tasa muy alta, abono chiquito
+
   const interestRateForPeriod = annualInterestRate * (weeks / 52);
   const totalInterest = amount * interestRateForPeriod;
   const totalToPay = amount + totalInterest;
   const weeklyPaymentConfirm = totalToPay / weeks;
-  const isOverleveraged = weeklyPaymentConfirm > (weeklyIncome * 0.40);
+
+  // Regla dura de riesgo: TC es más estricta que Préstamo
+  const riskThreshold = productType === 'TC' ? 0.30 : 0.40;
+  const isOverleveraged = weeklyPaymentConfirm > (weeklyIncome * riskThreshold);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -98,13 +102,12 @@ function App() {
   };
 
   // ==========================================
-  // FLUJO DE DEMO: VERTICAL SLICE (EL MODO HISTORIA)
+  // FLUJO DE DEMO: VERTICAL SLICE
   // ==========================================
   if (isLoggedIn && showStoryMode) {
     return (
       <div className="min-h-screen font-sans flex flex-col justify-center items-center overflow-hidden transition-all duration-700">
 
-        {/* PASO 1: EL GANCHO (MISIÓN) */}
         {storyStep === 1 && (
           <div className="bg-gray-50 min-h-screen w-full flex flex-col items-center justify-center p-4 relative">
             <button onClick={() => setIsLoggedIn(false)} className="absolute top-6 left-6 md:top-10 md:left-10 text-gray-400 font-bold hover:text-black flex items-center gap-2 transition-colors">
@@ -118,25 +121,15 @@ function App() {
               </div>
               <div className="p-8">
                 <p className="text-gray-600 text-lg mb-6 leading-relaxed">Necesitas urgentemente una nueva Laptop cotizada en <strong className="text-black">$10,000 MXN</strong>. Tienes tu crédito Azteca disponible. ¿Cómo vas a financiar esta compra?</p>
-
                 <div className="space-y-4">
-                  {/* BOTÓN TRAMPA */}
-                  <button
-                    onClick={() => setStoryStep(2)}
-                    className="w-full relative group bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-emerald-500 hover:bg-emerald-100 p-6 rounded-2xl text-left transition-all active:scale-95 shadow-md flex items-center justify-between"
-                  >
+                  <button onClick={() => setStoryStep(2)} className="w-full relative group bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-emerald-500 hover:bg-emerald-100 p-6 rounded-2xl text-left transition-all active:scale-95 shadow-md flex items-center justify-between">
                     <div>
                       <span className="bg-emerald-500 text-white text-xs font-bold px-2 py-1 rounded-md mb-2 inline-block">✨ OPCIÓN CÓMODA</span>
                       <h3 className="text-xl font-black text-gray-900">Un pago chiquito y relajado</h3>
                       <p className="text-sm text-gray-600 mt-1">Solo paga <strong className="text-emerald-700">$150 pesitos</strong> a la semana (a larguísimas 120 semanas).</p>
                     </div>
                   </button>
-
-                  {/* BOTÓN CORRECTO */}
-                  <button
-                    onClick={() => setStoryStep(3)}
-                    className="w-full bg-white border border-gray-200 hover:border-gray-400 p-6 rounded-2xl text-left transition-all active:scale-95 flex items-center justify-between group"
-                  >
+                  <button onClick={() => setStoryStep(3)} className="w-full bg-white border border-gray-200 hover:border-gray-400 p-6 rounded-2xl text-left transition-all active:scale-95 flex items-center justify-between group">
                     <div>
                       <span className="bg-gray-200 text-gray-700 text-xs font-bold px-2 py-1 rounded-md mb-2 inline-block">OPCIÓN EXIGENTE</span>
                       <h3 className="text-xl font-bold text-gray-800">Compromiso Financiero</h3>
@@ -149,20 +142,17 @@ function App() {
           </div>
         )}
 
-        {/* PASO 2: LA CONSECUENCIA DE LA MALA DECISIÓN */}
         {storyStep === 2 && (
           <div className="bg-red-950 min-h-screen w-full flex flex-col items-center justify-center p-4 relative">
             <button onClick={() => setStoryStep(1)} className="absolute top-6 left-6 md:top-10 md:left-10 text-red-300 font-bold hover:text-white flex items-center gap-2 transition-colors z-50">
               <span className="text-xl">←</span> Volver a elegir
             </button>
-            {/* Patrón de peligro */}
             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #000 0, #000 10px, transparent 10px, transparent 20px)' }}></div>
 
             <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl shadow-red-900/50 p-8 text-center animate-in zoom-in-95 duration-300 relative z-10 border-4 border-red-600 mt-12">
               <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center text-red-600 text-5xl mx-auto mb-6">⚠️</div>
               <h2 className="text-3xl font-black text-red-600 mb-2">¡Asfixia Financiera Crítica!</h2>
               <p className="text-lg text-gray-700 mb-6 font-medium">Buscando pagar lo "mínimo posible", los intereses compuestos te han devorado.</p>
-
               <div className="bg-red-50 p-4 rounded-xl text-left mb-8 border border-red-100">
                 <p className="text-red-800 mb-2">Por tu Laptop de $10,000 terminarías pagando <strong>$18,000</strong> en total.</p>
                 <div className="w-full bg-red-200 h-2 rounded-full overflow-hidden">
@@ -170,28 +160,20 @@ function App() {
                 </div>
                 <p className="text-xs text-red-600 mt-2 font-bold text-center">¡Esa es una pésima decisión crediticia a largo plazo!</p>
               </div>
-
-              <button
-                onClick={() => setStoryStep(1)}
-                className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg active:scale-95"
-              >
+              <button onClick={() => setStoryStep(1)} className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 px-6 rounded-xl transition-all shadow-lg active:scale-95">
                 Analizar la Lección y Volver a Intentar
               </button>
             </div>
           </div>
         )}
 
-        {/* PASO 3: LA RECOMPENSA (DECISIÓN CORRECTA) */}
         {storyStep === 3 && (
           <div className="bg-emerald-900 min-h-screen w-full flex flex-col items-center justify-center p-4 relative">
             <button onClick={() => setStoryStep(1)} className="absolute top-6 left-6 md:top-10 md:left-10 text-emerald-300 font-bold hover:text-white flex items-center gap-2 transition-colors z-50">
               <span className="text-xl">←</span> Volver a elegir
             </button>
             <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl p-8 text-center animate-in zoom-in-100 duration-700 border-4 border-emerald-500 relative overflow-hidden mt-12">
-
-              {/* Confeti estético */}
               <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-emerald-100 to-transparent"></div>
-
               <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600 text-5xl mx-auto mb-6 relative z-10">💎</div>
               <h2 className="text-3xl font-black text-emerald-600 mb-2 relative z-10">¡Decisión Financiera Maestra!</h2>
               <p className="text-gray-700 mb-6 font-medium relative z-10">Un pago exigente te acaba de ahorrar muchísima deuda y meses de trabajo extra. Ese es el poder de liquidar a corto plazo.</p>
@@ -204,23 +186,12 @@ function App() {
                     <p className="text-blue-200 text-xs">+500 PX  |  +80 Score Azteca</p>
                   </div>
                 </div>
-                <p className="text-sm font-medium leading-relaxed">
-                  Traductor Bancario Real: Comportarte así frente a un banco garantiza que tu primera Tarjeta Física tenga un <strong className="text-yellow-400">límite crediticio 20% más alto</strong> y tasas preferenciales.
-                </p>
+                <p className="text-sm font-medium leading-relaxed">Traductor Bancario Real: Comportarte así frente a un banco garantiza que tu primera Tarjeta Física tenga un <strong className="text-yellow-400">límite crediticio 20% más alto</strong> y tasas preferenciales.</p>
               </div>
 
               <button
                 onClick={() => {
-                  // Entregar recompensa e inyectar el juego!
-                  const bonoXp = 500;
-                  const bonoScore = 80;
-                  const nuevaDeuda = 11050; // Capital + poquito interes por pagar rapido
-                  const nuevoPago = 850;
-
-                  // Guardamos en la base de datos la decisión
-                  syncDataToDB(xp + bonoXp, score + bonoScore, walletMoney, currentDebt + nuevaDeuda, minWeeklyPayment + nuevoPago);
-
-                  // Rompemos el modo historia
+                  syncDataToDB(xp + 500, score + 80, walletMoney, currentDebt + 11050, minWeeklyPayment + 850);
                   setShowStoryMode(false);
                   setActiveTab('dashboard');
                 }}
@@ -231,20 +202,18 @@ function App() {
             </div>
           </div>
         )}
-
       </div>
     );
   }
 
   // ==========================================
-  // PANTALLA DE LOGIN
+  // LOGIN NORMAL CATCH
   // ==========================================
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-96 bg-green-600 rounded-b-[40%] transform -translate-y-20 shadow-2xl skew-y-2"></div>
         <div className="absolute w-64 h-64 bg-green-500 rounded-full blur-3xl opacity-50 top-10 left-10"></div>
-
         <div className="bg-white max-w-md w-full rounded-3xl shadow-2xl overflow-hidden relative z-10 animate-in fade-in slide-in-from-bottom-10 duration-700">
           <div className="p-8 pb-6 text-center border-b border-gray-100">
             <div className="w-16 h-16 bg-gradient-to-tr from-green-700 to-green-500 rounded-2xl flex items-center justify-center text-white font-black text-3xl mx-auto shadow-lg mb-4">A</div>
@@ -269,10 +238,9 @@ function App() {
   }
 
   // ==========================================
-  // PANTALLA PRINCIPAL (Lo que se programó originalmente)
+  // DASHBOARD PRINCIPAL Y SANDBOX
   // ==========================================
 
-  // LOGICA DEL SIMULADOR LIBRE U OTRAS HERRAMIENTAS
   const saveSimulationTransaction = async (tipo, dictamenEducativo) => {
     if (!userId) return;
     try {
@@ -281,7 +249,7 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: userId,
-          tipoSimulacion: 'CREDITO_PERSONAL',
+          tipoSimulacion: productType,
           parametros: { montoSolicitado: amount, plazoSemanas: weeks, tasaInteresAplicada: annualInterestRate, pagoSemanalCalculado: weeklyPaymentConfirm },
           resultadoEducativo: { comprendioCAT: true, decisionFinal: dictamenEducativo }
         })
@@ -305,14 +273,13 @@ function App() {
     };
   };
 
-  // Botones del Simulador Sandbox (Tab 3)
   const acceptRescuePlan = () => {
     setWeeks(52); setShowCopilot(false); setUnderstandRisk(false);
     const adjustedTotal = amount + (amount * (annualInterestRate * (52 / 52)));
     const adjustedWeeklyInfo = adjustedTotal / 52;
     const { newWallet, newDebt, newWeeklyPayment } = injectLoanToProfile(amount, adjustedTotal, adjustedWeeklyInfo);
     syncDataToDB(xp + 100, score + 15, newWallet, newDebt, newWeeklyPayment);
-    saveSimulationTransaction('CREDITO_PERSONAL', 'RESCATE_ACEPTADO');
+    saveSimulationTransaction('RESCATE_IA', 'ACEPTADO');
     alert("¡Rescate Exitoso guardado en la nube! Tu decisión fue recompensada.");
     setActiveTab('dashboard');
   };
@@ -321,7 +288,7 @@ function App() {
     setShowCopilot(false); setUnderstandRisk(false);
     const { newWallet, newDebt, newWeeklyPayment } = injectLoanToProfile(amount, totalToPay, weeklyPaymentConfirm);
     syncDataToDB(xp, score - 80, newWallet, newDebt, newWeeklyPayment);
-    saveSimulationTransaction('CREDITO_PERSONAL', 'RIESGO_ASUMIDO');
+    saveSimulationTransaction('PRESTAMO_TOXICO', 'RIESGO_ASUMIDO');
     alert("Préstamo riesgoso registrado y dinero depositado en billetera.");
     setActiveTab('dashboard');
   };
@@ -333,13 +300,12 @@ function App() {
     } else {
       const { newWallet, newDebt, newWeeklyPayment } = injectLoanToProfile(amount, totalToPay, weeklyPaymentConfirm);
       syncDataToDB(xp + 50, score, newWallet, newDebt, newWeeklyPayment);
-      saveSimulationTransaction('CREDITO_PERSONAL', 'PAGO_SANO');
+      saveSimulationTransaction('PRESTAMO_SANO', 'EXITO');
       alert("¡Simulación saludable! Capital depositado en tu billetera.");
       setActiveTab('dashboard');
     }
   };
 
-  // Abonos de Facturas
   const simulatePayment = () => {
     const abono = Number(paymentInput);
     if (currentDebt <= 0) return alert("¡No tienes ninguna deuda!");
@@ -436,7 +402,6 @@ function App() {
                         </div>
                         <button onClick={simulatePayment} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all active:scale-95">Pagar Deuda</button>
                       </div>
-
                       <button onClick={missPayment} className="text-red-500 hover:text-red-700 hover:bg-red-50 font-bold py-2 px-4 rounded-lg transition-colors w-full text-sm mt-2 border border-transparent">
                         Saltar Pago e Ignorar Deuda (Daño de Score)
                       </button>
@@ -460,7 +425,6 @@ function App() {
                 </div>
                 <p className="text-lg font-bold text-blue-600">{xp} / 2000 XP</p>
               </div>
-
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col items-center justify-center text-center">
                 <p className="text-gray-500 font-bold tracking-widest text-sm mb-4 uppercase">Score De Salud Crediticio</p>
                 <div className="relative">
@@ -504,38 +468,82 @@ function App() {
           </div>
         )}
 
-        {/* SIMULATOR TAB */}
+        {/* SIMULATOR TAB MULTI-PRODUCTO */}
         {activeTab === 'simulator' && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Modo Sandbox Abierto</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Simulador Abierto</h1>
+              <p className="text-gray-500 mb-4">Elige tu vehículo financiero y analiza cómo impacta a tu salud.</p>
+            </div>
+
+            {/* SELECTOR DE PRODUCTOS */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-2 sm:p-4 md:p-6 mb-6 flex flex-col sm:flex-row gap-2 sm:gap-4 overflow-x-auto">
+              <button onClick={() => setProductType('PRESTAMO')} className={`flex-1 py-3 px-4 rounded-xl font-bold transition flex items-center justify-center gap-2 whitespace-nowrap ${productType === 'PRESTAMO' ? 'bg-green-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                💵 Préstamo Efectivo
+              </button>
+              <button onClick={() => setProductType('TC')} className={`flex-1 py-3 px-4 rounded-xl font-bold transition flex items-center justify-center gap-2 whitespace-nowrap ${productType === 'TC' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                💳 Tarjeta de Crédito
+              </button>
+              <button onClick={() => setProductType('CONSUMO')} className={`flex-1 py-3 px-4 rounded-xl font-bold transition flex items-center justify-center gap-2 whitespace-nowrap ${productType === 'CONSUMO' ? 'bg-yellow-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                🛍️ Crédito Tienda Elektra
+              </button>
+            </div>
+
+            {/* AVISO EDUCATIVO DE PRODUCTO */}
+            <div className="mb-6 border-l-4 p-4 rounded-r-xl transition-all
+              ${productType === 'PRESTAMO' ? 'bg-green-50 border-green-500 text-green-800' : ''}
+              ${productType === 'TC' ? 'bg-blue-50 border-blue-500 text-blue-800' : ''}
+              ${productType === 'CONSUMO' ? 'bg-yellow-50 border-yellow-500 text-yellow-800' : ''}
+            ">
+              <h4 className="font-bold flex items-center gap-2">
+                {productType === 'PRESTAMO' && "Consejo del Mentor: Liquidez y Capital"}
+                {productType === 'TC' && "Consejo del Mentor: Compras Inteligentes"}
+                {productType === 'CONSUMO' && "Consejo del Mentor: Bienes Duraderos"}
+              </h4>
+              <p className="text-sm mt-1">
+                {productType === 'PRESTAMO' && "Úsalo para emergencias de efectivo o emprender un pequeño negocio. La tasa de interés es moderada, pero es un compromiso a mediano plazo."}
+                {productType === 'TC' && "Ideal para tu despensa y pagos que liquidarás a fin de mes. Si decides pagar solo el MÍNIMO, la tasa anual te consumirá vivo. ¡Intenta ser siempre Totalero!"}
+                {productType === 'CONSUMO' && "Perfecto para llevarte una TV o Refrigerador hoy mismo pagando muy poquito a la semana. Atención: a plazos larguísimos, terminas pagando el doble o triple."}
+              </p>
             </div>
 
             {showCopilot && (
               <div className="mb-8 p-6 bg-slate-900 rounded-2xl shadow-2xl flex flex-col items-center text-center gap-6 border border-slate-700 animate-in zoom-in-95">
                 <h3 className="text-xl font-bold text-blue-400">🚨 INTERVENCIÓND DE RIESGO 🚨</h3>
-                <p className="text-slate-200">El pago de <strong className="text-red-400">${Math.round(weeklyPaymentConfirm)}/sem</strong> excede el límite del 40% de ingresos sugerido.</p>
+                <p className="text-slate-200">El pago de <strong className="text-red-400">${Math.round(weeklyPaymentConfirm)}/sem</strong> excede tu capacidad sana de pago simulada.</p>
                 <div className="bg-slate-800 p-4 rounded-lg w-full max-w-sm">
                   <label className="flex items-center space-x-3 cursor-pointer">
                     <input type="checkbox" className="w-5 h-5 accent-red-500" checked={understandRisk} onChange={(e) => setUnderstandRisk(e.target.checked)} />
-                    <span className="text-xs text-slate-300 text-left">Comprendo el riesgo altísimo al que me comprometo. Asumo daños.</span>
+                    <span className="text-xs text-slate-300 text-left">Comprendo el riesgo altísimo al que me comprometo. Asumo daños a mi Score.</span>
                   </label>
                 </div>
                 <div className="flex gap-4 w-full">
                   <button onClick={acceptRescuePlan} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl">Recibir Rescate (Sano)</button>
-                  <button onClick={forceBadLoan} disabled={!understandRisk} className={`flex-1 font-bold py-3 rounded-xl ${understandRisk ? 'bg-red-600 text-white' : 'bg-slate-700 text-slate-500'}`}>Asumir Deuda Impagable</button>
+                  <button onClick={forceBadLoan} disabled={!understandRisk} className={`flex-1 font-bold py-3 rounded-xl ${understandRisk ? 'bg-red-600 text-white' : 'bg-slate-700 text-slate-500'}`}>Asumir Deuda</button>
                 </div>
               </div>
             )}
 
             <div className={`space-y-6 ${showCopilot ? 'opacity-50 blur-sm pointer-events-none' : ''}`}>
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <label className="font-semibold text-gray-600 text-sm">Monto</label>
-                <input type="range" min="1000" max="50000" step="100" value={amount} onChange={(e) => { setAmount(Number(e.target.value)); setShowCopilot(false); }} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600 mt-2" />
-                <p className="font-black text-2xl text-green-600 mt-2">${amount}</p>
+                <label className="font-semibold text-gray-600 text-sm">Capital Total a Financiar</label>
+                <input type="range" min="1000" max="50000" step="100" value={amount} onChange={(e) => { setAmount(Number(e.target.value)); setShowCopilot(false); }} className={`w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2 
+                  ${productType === 'PRESTAMO' ? 'accent-green-600' : ''}
+                  ${productType === 'TC' ? 'accent-blue-600' : ''}
+                  ${productType === 'CONSUMO' ? 'accent-yellow-500' : ''}
+                `} />
+                <p className={`font-black text-2xl mt-2 
+                  ${productType === 'PRESTAMO' ? 'text-green-600' : ''}
+                  ${productType === 'TC' ? 'text-blue-600' : ''}
+                  ${productType === 'CONSUMO' ? 'text-yellow-500' : ''}
+                `}>${amount}</p>
 
-                <label className="font-semibold text-gray-600 text-sm mt-6 block">Semanas a Estirar</label>
-                <input type="range" min="13" max="154" step="1" value={weeks} onChange={(e) => { setWeeks(Number(e.target.value)); setShowCopilot(false); }} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600 mt-2" />
+                <label className="font-semibold text-gray-600 text-sm mt-6 block">Semanas a Estirar la deuda</label>
+                <input type="range" min="13" max="154" step="1" value={weeks} onChange={(e) => { setWeeks(Number(e.target.value)); setShowCopilot(false); }} className={`w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2
+                  ${productType === 'PRESTAMO' ? 'accent-green-600' : ''}
+                  ${productType === 'TC' ? 'accent-blue-600' : ''}
+                  ${productType === 'CONSUMO' ? 'accent-yellow-500' : ''}
+                `} />
                 <p className="font-black text-2xl text-gray-800 mt-2">{weeks} semanas</p>
               </div>
 
@@ -545,10 +553,14 @@ function App() {
                     <span className="text-gray-400 font-medium">Ticket de Abono Estimado</span>
                     <span className={`text-4xl font-black ${isOverleveraged ? 'text-red-500' : 'text-green-400'}`}>${Math.round(weeklyPaymentConfirm)}</span>
                   </div>
-                  <button onClick={handleSimulateAction} className="w-full py-4 rounded-xl font-bold bg-green-500 text-white active:scale-95">Solicitar e inyectar a mi Billetera</button>
+                  <button onClick={handleSimulateAction} className={`w-full py-4 rounded-xl font-bold text-white active:scale-95
+                     ${productType === 'PRESTAMO' ? 'bg-green-500' : ''}
+                     ${productType === 'TC' ? 'bg-blue-500' : ''}
+                     ${productType === 'CONSUMO' ? 'bg-yellow-500' : ''}
+                  `}>Adquirir Deuda Simulada</button>
                 </div>
                 <div className="bg-gray-800 p-4 border-t border-gray-700 flex justify-between text-xs text-slate-400">
-                  <span>Int. Anual: {(annualInterestRate * 100).toFixed(0)}%</span>
+                  <span>Tasa Anual Fija: {(annualInterestRate * 100).toFixed(0)}%</span>
                   <span>Pagando Total: ${Math.round(totalToPay).toLocaleString()}</span>
                 </div>
               </div>
