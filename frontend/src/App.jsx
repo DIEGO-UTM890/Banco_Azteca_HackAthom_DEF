@@ -106,8 +106,11 @@ function App() {
 
         {/* PASO 1: EL GANCHO (MISIÓN) */}
         {storyStep === 1 && (
-          <div className="bg-gray-50 min-h-screen w-full flex flex-col items-center justify-center p-4">
-            <div className="max-w-xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500 border border-gray-100">
+          <div className="bg-gray-50 min-h-screen w-full flex flex-col items-center justify-center p-4 relative">
+            <button onClick={() => setIsLoggedIn(false)} className="absolute top-6 left-6 md:top-10 md:left-10 text-gray-400 font-bold hover:text-black flex items-center gap-2 transition-colors">
+              <span className="text-xl">←</span> Salir al Login
+            </button>
+            <div className="max-w-xl w-full bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-500 border border-gray-100 mt-12">
               <div className="bg-green-600 p-8 text-center relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-20 text-6xl">💻</div>
                 <h2 className="text-sm font-black text-green-200 tracking-widest uppercase mb-2">Misión Inaugural</h2>
@@ -149,10 +152,13 @@ function App() {
         {/* PASO 2: LA CONSECUENCIA DE LA MALA DECISIÓN */}
         {storyStep === 2 && (
           <div className="bg-red-950 min-h-screen w-full flex flex-col items-center justify-center p-4 relative">
+            <button onClick={() => setStoryStep(1)} className="absolute top-6 left-6 md:top-10 md:left-10 text-red-300 font-bold hover:text-white flex items-center gap-2 transition-colors z-50">
+              <span className="text-xl">←</span> Volver a elegir
+            </button>
             {/* Patrón de peligro */}
             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #000 0, #000 10px, transparent 10px, transparent 20px)' }}></div>
 
-            <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl shadow-red-900/50 p-8 text-center animate-in zoom-in-95 duration-300 relative z-10 border-4 border-red-600">
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl shadow-red-900/50 p-8 text-center animate-in zoom-in-95 duration-300 relative z-10 border-4 border-red-600 mt-12">
               <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center text-red-600 text-5xl mx-auto mb-6">⚠️</div>
               <h2 className="text-3xl font-black text-red-600 mb-2">¡Asfixia Financiera Crítica!</h2>
               <p className="text-lg text-gray-700 mb-6 font-medium">Buscando pagar lo "mínimo posible", los intereses compuestos te han devorado.</p>
@@ -177,8 +183,11 @@ function App() {
 
         {/* PASO 3: LA RECOMPENSA (DECISIÓN CORRECTA) */}
         {storyStep === 3 && (
-          <div className="bg-emerald-900 min-h-screen w-full flex flex-col items-center justify-center p-4">
-            <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl p-8 text-center animate-in zoom-in-100 duration-700 border-4 border-emerald-500 relative overflow-hidden">
+          <div className="bg-emerald-900 min-h-screen w-full flex flex-col items-center justify-center p-4 relative">
+            <button onClick={() => setStoryStep(1)} className="absolute top-6 left-6 md:top-10 md:left-10 text-emerald-300 font-bold hover:text-white flex items-center gap-2 transition-colors z-50">
+              <span className="text-xl">←</span> Volver a elegir
+            </button>
+            <div className="max-w-lg w-full bg-white rounded-3xl shadow-2xl p-8 text-center animate-in zoom-in-100 duration-700 border-4 border-emerald-500 relative overflow-hidden mt-12">
 
               {/* Confeti estético */}
               <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-emerald-100 to-transparent"></div>
