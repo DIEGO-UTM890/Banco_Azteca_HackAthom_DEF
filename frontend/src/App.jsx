@@ -57,7 +57,19 @@ function App() {
     const loadUserData = async () => {
       try {
         const res = await fetch('http://localhost:5000/api/users');
-        const data = await res.json();
+        let data = await res.json();
+
+        // AUTO-INICIALIZACIÓN DE LA BASE DE DATOS (Demo a prueba de errores)
+        if (!data || data.length === 0) {
+          const createRes = await fetch('http://localhost:5000/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre: 'Universitario Azteca', email: 'demo' + Date.now() + '@azteca.com' })
+          });
+          const newUser = await createRes.json();
+          data = [newUser];
+        }
+
         if (data && data.length > 0) {
           const mainUser = data[0];
           setUserId(mainUser._id);
