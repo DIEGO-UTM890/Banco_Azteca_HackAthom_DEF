@@ -36,22 +36,26 @@ const createUser = async (req, res) => {
   }
 };
 
-// @desc    Update user progress
+// @desc    Update user progress and finances
 // @route   PUT /api/users/:id
 // @access  Public
 const updateUserProgress = async (req, res) => {
   try {
-    const { xpPuntos, scoreCrediticioSimulado } = req.body;
+    const { xpPuntos, scoreCrediticioSimulado, billetera, deudaActiva, pagoMinimoSemanal } = req.body;
+
+    // Configurar objeto de actualización basándonos en lo que viene en el request
+    let updateFields = {};
+    if (xpPuntos !== undefined) updateFields['perfilGamificacion.xpPuntos'] = xpPuntos;
+    if (scoreCrediticioSimulado !== undefined) updateFields['perfilGamificacion.scoreCrediticioSimulado'] = scoreCrediticioSimulado;
+
+    if (billetera !== undefined) updateFields['finanzasSimuladas.billetera'] = billetera;
+    if (deudaActiva !== undefined) updateFields['finanzasSimuladas.deudaActiva'] = deudaActiva;
+    if (pagoMinimoSemanal !== undefined) updateFields['finanzasSimuladas.pagoMinimoSemanal'] = pagoMinimoSemanal;
 
     // Find and update the user
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
-      {
-        $set: {
-          'perfilGamificacion.xpPuntos': xpPuntos,
-          'perfilGamificacion.scoreCrediticioSimulado': scoreCrediticioSimulado
-        }
-      },
+      { $set: updateFields },
       { new: true } // Returns the updated document
     );
 
