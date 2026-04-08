@@ -24,6 +24,13 @@ function App() {
 
   const [depositAmount, setDepositAmount] = useState(3500);
 
+  // ESTADOS DEL CHATBOT / MENTOR
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    { sender: 'bot', text: '¡Hola! Soy tu Mentor Azteca. ¿Sobre qué tema financiero tienes dudas?' }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+
   // ESTADOS DEL SIMULADOR MULTI-PRODUCTO
   const [productType, setProductType] = useState('PRESTAMO'); // 'PRESTAMO' | 'TC' | 'CONSUMO'
   const [amount, setAmount] = useState(5000);
@@ -99,6 +106,39 @@ function App() {
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     setIsLoggedIn(true);
+  };
+
+  // LOGICA DEL CHATBOT
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    const userMessage = { sender: 'user', text: chatInput };
+    setChatMessages(prev => [...prev, userMessage]);
+    setChatInput('');
+
+    setTimeout(() => {
+      let botResponse = '';
+      const input = userMessage.text.toLowerCase();
+
+      if (input.includes('cat') || input.includes('costo anual total')) {
+        botResponse = 'El CAT (Costo Anual Total) es como el "precio real" de tu deuda. Incluye los intereses, comisiones y seguros. Si pides prestado para un Xbox, fíjate en el CAT, te dirá todo lo de más pagarás al año.';
+      } else if (input.includes('iva')) {
+        botResponse = 'El IVA es un impuesto (16%). Cuidado al firmar créditos, a veces te engañan diciendo que el interés es "$100" pero falta añadirle el "Más IVA".';
+      } else if (input.includes('comision') || input.includes('comisiones')) {
+        botResponse = 'Son cobros extra del banco. Cuidado con la "Comisión por Apertura" al pedir un crédito o la "Anualidad" de una tarjeta. ¡Busca cuentas libres de comisiones como nuestra Billetera!';
+      } else if (input.includes('interes') || input.includes('intereses')) {
+        botResponse = 'El interés es la penalización o precio por alquilar dinero ajeno. Aprende a dominar el interés compuesto y serás rico.';
+      } else if (input.includes('totalero')) {
+        botResponse = 'Un "Totalero" es un Dios Financiero. Es quien paga TOOOODO su saldo de tarjeta antes de su fecha límite. Al hacer esto, el banco te cobra un flamante $0 de intereses.';
+      } else if (input.includes('hola') || input.includes('ayuda')) {
+        botResponse = '¡Hola futuro gurú! Pregúntame qué es el CAT, IVA, Intereses, Comisiones o qué significa ser Totalero.';
+      } else {
+        botResponse = 'Lo siento, soy tu Mentor Financiero Azteca. Mi enfoque es exclusiva y únicamente tu salud financiera. \\nPrueba preguntarme:\\n- ¿Qué diablos es el CAT?\\n- ¿Qué es ser Totalero?';
+      }
+
+      setChatMessages(prev => [...prev, { sender: 'bot', text: botResponse }]);
+    }, 600);
   };
 
   // ==========================================
@@ -398,7 +438,7 @@ function App() {
                       <div className="flex items-center gap-2 mb-4">
                         <div className="relative flex-1">
                           <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 font-bold">$</span>
-                          <input type="number" min={Math.min(minWeeklyPayment, currentDebt)} max={currentDebt} value={paymentInput === 0 ? '' : paymentInput} onChange={(e) => setPaymentInput(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0" className="w-full font-bold text-xl bg-white border border-gray-300 rounded-xl py-3 pl-8 pr-4 focus:ring-green-500 focus:border-green-500 outline-none"/>
+                          <input type="number" min={Math.min(minWeeklyPayment, currentDebt)} max={currentDebt} value={paymentInput === 0 ? '' : paymentInput} onChange={(e) => setPaymentInput(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0" className="w-full font-bold text-xl bg-white border border-gray-300 rounded-xl py-3 pl-8 pr-4 focus:ring-green-500 focus:border-green-500 outline-none" />
                         </div>
                         <button onClick={simulatePayment} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all active:scale-95">Pagar Deuda</button>
                       </div>
@@ -454,7 +494,7 @@ function App() {
                 <div className="flex justify-center gap-2 mb-8">
                   <div className="relative w-64">
                     <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-green-700 font-black text-2xl">$</span>
-                    <input type="number" min="100" value={depositAmount === 0 ? '' : depositAmount} onChange={(e) => setDepositAmount(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0" className="w-full font-black text-4xl bg-gray-50 border-2 border-green-200 text-gray-800 rounded-2xl py-4 pl-12 pr-4 text-center"/>
+                    <input type="number" min="100" value={depositAmount === 0 ? '' : depositAmount} onChange={(e) => setDepositAmount(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0" className="w-full font-black text-4xl bg-gray-50 border-2 border-green-200 text-gray-800 rounded-2xl py-4 pl-12 pr-4 text-center" />
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3 mb-8">
@@ -567,6 +607,45 @@ function App() {
             </div>
           </div>
         )}
+        {/* CHATBOT MENTOR FLOTANTE */}
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+          {isChatOpen && (
+            <div className="bg-white w-[85vw] max-w-sm sm:w-96 rounded-2xl shadow-2xl border border-gray-200 overflow-hidden mb-4 animate-in slide-in-from-bottom-5">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-4 text-white flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">🤖</span>
+                  <span className="font-bold">Mentor Azteca IA</span>
+                </div>
+                <button onClick={() => setIsChatOpen(false)} className="text-blue-200 hover:text-white font-bold text-xl">&times;</button>
+              </div>
+
+              <div className="h-72 overflow-y-auto p-4 bg-slate-50 flex flex-col gap-3">
+                {chatMessages.map((msg, idx) => (
+                  <div key={idx} className={`max-w-[85%] rounded-xl p-3 text-sm shadow-sm ${msg.sender === 'bot' ? 'bg-white border border-gray-200 self-start text-gray-800 rounded-tl-none' : 'bg-blue-600 text-white self-end rounded-tr-none'}`}>
+                    {msg.text.split('\\n').map((line, i) => <p key={i} className="mb-1">{line}</p>)}
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-3 bg-white border-t border-gray-100">
+                <div className="flex gap-2 mb-3 overflow-x-auto scroller-hide pb-1">
+                  <button onClick={() => setChatInput('¿Qué es el CAT?')} className="bg-blue-50 text-blue-700 text-xs py-1.5 px-3 rounded-full hover:bg-blue-100 whitespace-nowrap font-bold shadow-sm">¿Qué es el CAT?</button>
+                  <button onClick={() => setChatInput('¿Totalero?')} className="bg-blue-50 text-blue-700 text-xs py-1.5 px-3 rounded-full hover:bg-blue-100 whitespace-nowrap font-bold shadow-sm">Totalero</button>
+                  <button onClick={() => setChatInput('Comisiones')} className="bg-blue-50 text-blue-700 text-xs py-1.5 px-3 rounded-full hover:bg-blue-100 whitespace-nowrap font-bold shadow-sm">Comisiones</button>
+                </div>
+                <form onSubmit={handleSendMessage} className="flex gap-2">
+                  <input type="text" value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Escribe al mentor..." className="flex-1 bg-gray-100 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 font-medium" />
+                  <button type="submit" className="bg-blue-600 hover:bg-blue-700 active:scale-95 transition-transform text-white w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-md">🚀</button>
+                </form>
+              </div>
+            </div>
+          )}
+
+          <button onClick={() => setIsChatOpen(!isChatOpen)} className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-3xl shadow-2xl transition-all active:scale-95 border-2 ${isChatOpen ? 'bg-white border-gray-200 text-gray-400 rotate-45' : 'bg-blue-600 hover:bg-blue-500 border-blue-400 text-yellow-300'}`}>
+            {isChatOpen ? '+' : '🤖'}
+          </button>
+        </div>
+
       </main>
     </div>
   );
