@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 function App() {
   // Estado general de Navegación 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('dashboard'); // dashboard | ingresos | simulator
 
   // Login States Simulados
   const [loginUser, setLoginUser] = useState('7712345678');
@@ -23,6 +23,9 @@ function App() {
   const [currentDebt, setCurrentDebt] = useState(0);
   const [minWeeklyPayment, setMinWeeklyPayment] = useState(0);
   const [paymentInput, setPaymentInput] = useState(0);
+
+  // Estado de Depósitos (Nuevo)
+  const [depositAmount, setDepositAmount] = useState(3500);
 
   // Estados del simulador financiero
   const [amount, setAmount] = useState(5000);
@@ -91,21 +94,33 @@ function App() {
   };
 
   // ----------------------------------------------------
-  // INYECCIÓN DE LA SIMULACIÓN A LA BILLETERA REAL
+  // REALIZAR UN DEPÓSITO SIMULADO A LA CUENTA (NUEVO)
+  // ----------------------------------------------------
+  const handleSimulateDeposit = () => {
+    const depositNum = Number(depositAmount);
+    if (depositNum < 100) {
+      alert("El depósito mínimo para la simulación es de $100");
+      return;
+    }
+    setWalletMoney(prev => prev + depositNum);
+    // Ganar un poquito de XP por guardar su dinero (educativo)
+    syncProgressToDB(xp + 10, score);
+    alert(`¡Depósito exitoso! Se han añadido $${depositNum.toLocaleString('es-MX')} a tu Billetera Virtual. (+10 XP)`);
+    setActiveTab('dashboard'); // Regresar a ver los millones
+  };
+
+
+  // ----------------------------------------------------
+  // INYECCIÓN DE LA SIMULACIÓN DE PRÉSTAMO A LA BILLETERA
   // ----------------------------------------------------
   const injectLoanToProfile = (capitalSolicitado, deudaTotal, pagoSemanalAsignado) => {
-    // Te depositamos el capital limpio en tu billetera para gastar
     setWalletMoney(prev => prev + capitalSolicitado);
-
-    // Asumimos toda la deuda generada y la sumamos a lo que debes
     setCurrentDebt(prev => prev + deudaTotal);
 
-    // La presión financiera la ajustamos (Si tenías ya un abono, se suma)
     const newWeeklyPayment = minWeeklyPayment + Math.round(pagoSemanalAsignado);
     setMinWeeklyPayment(newWeeklyPayment);
-    setPaymentInput(newWeeklyPayment); // Actualiza la cajita para la UI
+    setPaymentInput(newWeeklyPayment);
 
-    // Regresamos al menñu de Perfil para que el usuario vea el cambio impactante
     setActiveTab('dashboard');
   };
 
@@ -114,7 +129,6 @@ function App() {
     setShowCopilot(false);
     setUnderstandRisk(false);
 
-    // Calculo del Rescate
     const adjustedInterest = amount * (annualInterestRate * (52 / 52));
     const adjustedTotal = amount + adjustedInterest;
     const adjustedWeeklyInfo = adjustedTotal / 52;
@@ -160,7 +174,7 @@ function App() {
       alert(`El abono mínimo semanal de tu deuda actual es de $${minWeeklyPayment}.`);
       return;
     }
-    const realPayment = Math.min(abono, currentDebt); // No pagar de más si ya vas a liquidar
+    const realPayment = Math.min(abono, currentDebt);
 
     if (walletMoney >= realPayment && currentDebt > 0) {
       setWalletMoney(walletMoney - realPayment);
@@ -192,6 +206,10 @@ function App() {
     }
   };
 
+
+  // ==========================================
+  // PANTALLA DE LOGIN
+  // ==========================================
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     setIsLoggedIn(true);
@@ -226,8 +244,11 @@ function App() {
     );
   }
 
+  // ==========================================
+  // PANTALLA PRINCIPAL 
+  // ==========================================
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans mb-10">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans mb-10 overflow-x-hidden">
       <header className="bg-white shadow relative z-10 border-b-4 border-green-600 sticky top-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -235,14 +256,15 @@ function App() {
               <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">A</div>
               <span className="font-bold text-xl text-gray-900 tracking-tight hidden sm:block">Azteca <span className="text-green-600">Horizon</span></span>
             </div>
-            <nav className="flex space-x-2 sm:space-x-4">
-              <button onClick={() => { setActiveTab('dashboard'); setShowCopilot(false); }} className={`px-3 py-2 rounded-md font-bold transition-colors ${activeTab === 'dashboard' ? 'bg-green-100 text-green-800' : 'text-gray-500 hover:bg-gray-100'}`}>Mi Perfil</button>
-              <button onClick={() => setActiveTab('simulator')} className={`px-3 py-2 rounded-md font-bold transition-colors ${activeTab === 'simulator' ? 'bg-green-100 text-green-800' : 'text-gray-500 hover:bg-gray-100'}`}>Simulador</button>
+            <nav className="flex space-x-1 sm:space-x-4 overflow-x-auto scroller-hide">
+              <button onClick={() => { setActiveTab('dashboard'); setShowCopilot(false); }} className={`px-2 py-2 rounded-md font-bold text-sm transition-colors whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-green-100 text-green-800' : 'text-gray-500 hover:bg-gray-100'}`}>Mi Perfil</button>
+              <button onClick={() => { setActiveTab('ingresos'); setShowCopilot(false); }} className={`px-2 py-2 rounded-md font-bold text-sm transition-colors whitespace-nowrap ${activeTab === 'ingresos' ? 'bg-green-100 text-green-800' : 'text-gray-500 hover:bg-gray-100'}`}>Depósitos</button>
+              <button onClick={() => { setActiveTab('simulator') }} className={`px-2 py-2 rounded-md font-bold text-sm transition-colors whitespace-nowrap ${activeTab === 'simulator' ? 'bg-green-100 text-green-800' : 'text-gray-500 hover:bg-gray-100'}`}>Simulador</button>
             </nav>
             <div className="flex items-center space-x-3">
-              <button onClick={() => setIsLoggedIn(false)} className="text-xs font-bold text-gray-400 hover:text-red-500 mr-2">Cerrar Sesión</button>
+              <button onClick={() => setIsLoggedIn(false)} className="text-xs font-bold text-gray-400 hover:text-red-500 mr-2 hidden sm:block">Salir</button>
               <div className="text-right hidden md:block">
-                <div className="text-sm font-bold text-gray-900">Ingreso: ${weeklyIncome}/sem</div>
+                <div className="text-sm font-bold text-gray-900">Sueldo: ${weeklyIncome}/sem</div>
                 <div className="text-xs text-green-600 font-medium">{userName}</div>
               </div>
             </div>
@@ -251,6 +273,8 @@ function App() {
       </header>
 
       <main className="flex-1 w-full max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        {/* -------------------- TAB: DASHBOARD -------------------- */}
         {activeTab === 'dashboard' && (
           <div className="animate-in fade-in duration-500 space-y-6">
             <div className="mb-4">
@@ -305,34 +329,89 @@ function App() {
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col justify-center text-center">
-              <p className="text-gray-500 font-medium mb-2 uppercase tracking-widest text-xs">Progreso Educativo</p>
-              <p className="text-2xl font-bold text-gray-900 mb-2">Nivel 2: Explorador Financiero</p>
-              <div className="w-full max-w-md mx-auto bg-gray-100 rounded-full h-4 mb-2 overflow-hidden">
-                <div className="bg-gradient-to-r from-blue-400 to-blue-600 h-4 transition-all duration-1000" style={{ width: `${Math.min((xp / 2000) * 100, 100)}%` }}></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col justify-center text-center">
+                <p className="text-gray-500 font-medium mb-2 uppercase tracking-widest text-xs">Progreso Educativo</p>
+                <p className="text-2xl font-bold text-gray-900 mb-2">Nivel 2: Explorador Financiero</p>
+                <div className="w-full max-w-full mx-auto bg-gray-100 rounded-full h-4 mb-2 overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-400 to-blue-600 h-4 transition-all duration-1000" style={{ width: `${Math.min((xp / 2000) * 100, 100)}%` }}></div>
+                </div>
+                <p className="text-lg font-bold text-blue-600">{xp} / 2000 XP</p>
               </div>
-              <p className="text-lg font-bold text-blue-600">{xp} / 2000 XP</p>
-            </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col items-center justify-center text-center">
-              <p className="text-gray-500 font-bold tracking-widest text-sm mb-4 uppercase">Score De Salud Crediticio</p>
-              <div className="relative">
-                <svg className="w-40 h-40 transform -rotate-90 transition-all duration-1000">
-                  <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-gray-100" />
-                  <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="440" strokeDashoffset={440 - (440 * (score / 850))} className={score >= 600 ? "text-green-500" : "text-red-500"} />
-                </svg>
-                <span className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-4xl font-black transition-colors duration-500 ${score >= 600 ? "text-gray-800" : "text-red-600"}`}>
-                  {score}
-                </span>
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col items-center justify-center text-center">
+                <p className="text-gray-500 font-bold tracking-widest text-sm mb-4 uppercase">Score De Salud Crediticio</p>
+                <div className="relative">
+                  <svg className="w-32 h-32 transform -rotate-90 transition-all duration-1000">
+                    <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-gray-100" />
+                    <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="10" fill="transparent" strokeDasharray="351" strokeDashoffset={351 - (351 * (score / 850))} className={score >= 600 ? "text-green-500" : "text-red-500"} />
+                  </svg>
+                  <span className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-3xl font-black transition-colors duration-500 ${score >= 600 ? "text-gray-800" : "text-red-600"}`}>
+                    {score}
+                  </span>
+                </div>
               </div>
             </div>
-
           </div>
         )}
 
-        {/* -------------------- SIMULATOR TAB -------------------- */}
+        {/* -------------------- TAB: INGRESOS (DEPÓSITOS) -------------------- */}
+        {activeTab === 'ingresos' && (
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900">Simulador de Ingresos ("Payday")</h1>
+              <p className="text-gray-600 mt-1">Carga dinero a tu billetera para tener fondos y pagar tus deudas simuladas.</p>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-xl border border-green-100 overflow-hidden max-w-2xl mx-auto">
+              <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-8 text-white text-center">
+                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+                  <span className="text-3xl">💰</span>
+                </div>
+                <h2 className="text-2xl font-black">Depósito de Efectivo / Nómina</h2>
+                <p className="text-green-100 mt-2">Mete fondos directamente a la aplicación</p>
+              </div>
+
+              <div className="p-8">
+                <label className="block text-center text-sm font-bold text-gray-600 uppercase tracking-widest mb-6">Monto a depositar en pesos</label>
+                <div className="flex items-center justify-center gap-2 mb-8">
+                  <div className="relative w-64">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-green-700 font-black text-2xl">$</span>
+                    <input
+                      type="number"
+                      min="100"
+                      value={depositAmount}
+                      onChange={(e) => setDepositAmount(Number(e.target.value))}
+                      className="w-full font-black text-4xl bg-gray-50 border-2 border-green-200 text-gray-800 rounded-2xl py-4 pl-12 pr-4 focus:ring-green-500 focus:border-green-500 outline-none text-center shadow-inner"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 mb-8">
+                  <button onClick={() => setDepositAmount(3500)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition">+ $3,500 (Nómina)</button>
+                  <button onClick={() => setDepositAmount(5000)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition">+ $5,000</button>
+                  <button onClick={() => setDepositAmount(10000)} className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3 rounded-xl transition">+ $10,000</button>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-8 text-blue-800 text-sm flex gap-3 items-center">
+                  <span className="text-2xl">💡</span>
+                  <p>Inyectar fondos te permite tener flujo libre para liquidar créditos grandes de forma simulada y ganar experiencia de pago puntual.</p>
+                </div>
+
+                <button
+                  onClick={handleSimulateDeposit}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-black text-xl py-4 rounded-xl shadow-[0_10px_20px_rgba(22,163,74,0.3)] transition-transform active:scale-95"
+                >
+                  Confirmar Depósito a Billetera
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* -------------------- TAB: SIMULATOR -------------------- */}
         {activeTab === 'simulator' && (
-          <div className="animate-in fade-in duration-500">
+          <div className="animate-in fade-in slide-in-from-right-4 duration-500">
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900">Simulador de Crédito Personal</h1>
               <p className="text-gray-600 mt-1">Al confirmar, el monto te será depositado en efectivo a la Billetera para que lo controles.</p>
@@ -344,27 +423,19 @@ function App() {
                   <div className="flex-shrink-0 animate-pulse bg-blue-500/20 p-4 rounded-full border 2 border-blue-400/50">
                     <div className="text-blue-300 text-sm font-bold text-center">[ALERTA]</div>
                   </div>
-
                   <div className="flex-1 w-full">
-                    <h3 className="text-xl font-bold text-blue-400 mb-2 flex items-center">
-                      RIESGO DE ASFIXIA FINANCIERA
-                    </h3>
-                    <p className="text-slate-200 text-sm md:text-base leading-relaxed mb-4">
-                      Has programado un pago de <strong className="text-red-400">${Math.round(weeklyPaymentConfirm)}/sem</strong>. Esto excede tu capacidad basándonos en tu sueldo.
-                    </p>
-
+                    <h3 className="text-xl font-bold text-blue-400 mb-2 flex items-center">RIESGO DE ASFIXIA FINANCIERA</h3>
+                    <p className="text-slate-200 text-sm md:text-base leading-relaxed mb-4">Has programado un pago de <strong className="text-red-400">${Math.round(weeklyPaymentConfirm)}/sem</strong>. Esto excede tu capacidad basándonos en tu sueldo libre.</p>
                     <div className="bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4">
                       <label className="flex items-start space-x-3 cursor-pointer">
                         <input type="checkbox" className="mt-1 w-5 h-5 accent-red-500 cursor-pointer" checked={understandRisk} onChange={(e) => setUnderstandRisk(e.target.checked)} />
-                        <span className="text-sm text-slate-300">
-                          Comprendo la altísima posibilidad de caer en impago y arruinar mi Score. Lo tomo bajo mi riesgo total.
-                        </span>
+                        <span className="text-sm text-slate-300">Comprendo la altísima posibilidad de caer en impago y arruinar mi Score. Lo tomo bajo mi riesgo total.</span>
                       </label>
                     </div>
                   </div>
                   <div className="flex-shrink-0 w-full md:w-64 flex flex-col space-y-3">
-                    <button onClick={acceptRescuePlan} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-[0_0_15px_rgba(37,99,235,0.4)]">Aceptar Rescate Seguro</button>
-                    <button onClick={forceBadLoan} disabled={!understandRisk} className={`w-full py-3 px-4 rounded-xl font-bold transition-all ${understandRisk ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}>Aprobar Préstamo Tóxico</button>
+                    <button onClick={acceptRescuePlan} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-[0_0_15px_rgba(37,99,235,0.4)]">Aceptar Rescate</button>
+                    <button onClick={forceBadLoan} disabled={!understandRisk} className={`w-full py-3 px-4 rounded-xl font-bold transition-all ${understandRisk ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}>Forzar Aprobación</button>
                     <button onClick={() => { setShowCopilot(false); setUnderstandRisk(false); }} className="w-full text-slate-400 hover:text-white text-sm font-medium py-2 px-4 transition-colors text-center">Volver atrás</button>
                   </div>
                 </div>
@@ -377,7 +448,7 @@ function App() {
                   <h2 className="text-lg font-bold text-gray-800 mb-6 border-b pb-4">Ajustes del Préstamo</h2>
                   <div className="mb-8">
                     <div className="flex justify-between items-end mb-4">
-                      <label className="font-semibold text-gray-600 text-sm uppercase tracking-wide">Monto a solicitar en efectivo</label>
+                      <label className="font-semibold text-gray-600 text-sm uppercase tracking-wide">Monto en efectivo a recibir</label>
                       <div className="flex items-center bg-gray-50 border border-gray-300 rounded-lg px-3 py-1">
                         <span className="text-gray-500 font-bold mr-1">$</span>
                         <input type="number" min="1000" max="50000" value={amount} onChange={(e) => { setAmount(Number(e.target.value)); setShowCopilot(false); setUnderstandRisk(false); }} className="font-bold text-xl text-green-600 bg-transparent outline-none w-24 text-right" />
@@ -405,18 +476,16 @@ function App() {
                     <div className="flex justify-between items-baseline mb-6">
                       <span className="text-gray-400 font-medium">Acuerdo Semanal</span>
                       <div className="text-right">
-                        <span className={`text-4xl font-black transition-colors ${isOverleveraged ? 'text-red-500' : 'text-green-400'}`}>
-                          ${Math.round(weeklyPaymentConfirm)}
-                        </span>
+                        <span className={`text-4xl font-black transition-colors ${isOverleveraged ? 'text-red-500' : 'text-green-400'}`}>${Math.round(weeklyPaymentConfirm)}</span>
                       </div>
                     </div>
                     <div className="space-y-4 font-mono text-sm mb-6">
                       <div className="flex justify-between pb-2 border-b border-gray-800">
-                        <span className="text-gray-400">Te cobraríamos en Total:</span>
+                        <span className="text-gray-400">Total a liquidar a Azteca:</span>
                         <span className="font-bold text-white">${Math.round(totalToPay).toLocaleString('es-MX')}</span>
                       </div>
                     </div>
-                    <button onClick={handleSimulateAction} className="w-full py-4 rounded-xl font-bold text-lg transition-all bg-green-500 hover:bg-green-400 text-white shadow-lg active:scale-95">Solicitar Depósito Inmediato</button>
+                    <button onClick={handleSimulateAction} className="w-full py-4 rounded-xl font-bold text-lg transition-all bg-green-500 hover:bg-green-400 text-white shadow-lg active:scale-95">Tramitar Préstamo Mismo Día</button>
                   </div>
 
                   <div className="bg-gray-800">
@@ -437,7 +506,6 @@ function App() {
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         )}
