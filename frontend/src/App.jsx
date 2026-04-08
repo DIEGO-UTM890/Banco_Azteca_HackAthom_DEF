@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  // Perfil del Usuario
-  const [xp, setXp] = useState(1250);
+  // Usuario y Perfil
+  const [userId, setUserId] = useState(null);
+  const [userName, setUserName] = useState('Cargando...');
+  const [xp, setXp] = useState(0);
   const [score, setScore] = useState(680);
   const weeklyIncome = 3500;
 
-  // Datos financieros del perfil (Deuda activa)
+  // Deuda Activa Placeholder (Podría venir del backend después)
   const currentDebt = 12500;
   const activeWeeklyPayment = 350;
   const remainingPayments = 38;
@@ -17,7 +19,6 @@ function App() {
   const [amount, setAmount] = useState(5000);
   const [weeks, setWeeks] = useState(52);
 
-  // Estado para alertas
   const [showCopilot, setShowCopilot] = useState(false);
   const [understandRisk, setUnderstandRisk] = useState(false);
 
@@ -28,35 +29,97 @@ function App() {
   const totalToPay = amount + totalInterest;
   const weeklyPayment = totalToPay / weeks;
 
-  // Triggers Financieros
   const isOverleveraged = weeklyPayment > (weeklyIncome * 0.40);
   const isTooLong = weeks >= 80;
+
+  // FETCH INICIAL AL BACKEND
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/users');
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const mainUser = data[0]; // Tomamos el primer usuario simulado
+          setUserId(mainUser._id);
+          setUserName(mainUser.nombre);
+          if (mainUser.perfilGamificacion) {
+            setXp(mainUser.perfilGamificacion.xpPuntos || 0);
+            setScore(mainUser.perfilGamificacion.scoreCrediticioSimulado || 680);
+          }
+        }
+      } catch (error) {
+        console.error("Error conectando al backend (asegúrate de encenderlo):", error);
+        setUserName('Invitado Local'); // Fallback si no está el backend prendido
+      }
+    };
+    loadUserData();
+  }, []);
+
+  // Función para sincronizar score al backend
+  const syncProgressToDB = async (newXp, newScore) => {
+    setXp(newXp);
+    setScore(newScore);
+    if (!userId) return; // Si no hay BD, solo usamos el estado local
+
+    try {
+      await fetch(`http://localhost:5000/api/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          xpPuntos: newXp,
+          scoreCrediticioSimulado: newScore
+        })
+      });
+    } catch (err) {
+      console.error("Error sincronizando progreso:", err);
+    }
+  };
+
+  // Función para guardar la simulación financiera al backend
+  const saveSimulationTransaction = async (tipo, dictamenEducativo) => {
+    if (!userId) return;
+    try {
+      await fetch('http://localhost:5000/api/simulations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          tipoSimulacion: 'CREDITO_PERSONAL',
+          parametros: { montoSolicitado: amount, plazoSemanas: weeks, tasaInteresAplicada: annualInterestRate, pagoSemanalCalculado: weeklyPayment },
+          resultadoEducativo: { comprendioCAT: true, decisionFinal: dictamenEducativo }
+        })
+      });
+    } catch (err) {
+      console.error("Error guardando simulación", err);
+    }
+  };
 
   // Plan de Rescate
   const acceptRescuePlan = () => {
     setWeeks(52);
     setShowCopilot(false);
     setUnderstandRisk(false);
-    setXp(xp + 100);
-    setScore(score + 15);
-    alert("¡Rescate Exitoso! Copiloto reestructuró tu préstamo. Tu Score ha mejorado por aceptar la ayuda financiera.");
+    syncProgressToDB(xp + 100, score + 15);
+    saveSimulationTransaction('CREDITO_PERSONAL', 'RESCATE_ACEPTADO');
+    alert("¡Rescate Exitoso! Tu decisión responsable y el aumento de tu XP se acaban de guardar en la base de datos.");
   };
 
   const forceBadLoan = () => {
     setShowCopilot(false);
     setUnderstandRisk(false);
-    setScore(score - 80); // Gran penalización
-    alert("Préstamo de alto riesgo confirmado. Tu Score crediticio ha sido gravemente penalizado por endeudamiento excesivo.");
+    syncProgressToDB(xp, score - 80);
+    saveSimulationTransaction('CREDITO_PERSONAL', 'RIESGO_ASUMIDO');
+    alert("Préstamo riesgoso registrado. Tu caída de Score crediticio ya se reflejó en la Base de Datos Azteca.");
   };
 
-  // Botón Confirmar Tramite
   const handleSimulateAction = () => {
     if (isOverleveraged) {
       setShowCopilot(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      setXp(xp + 50);
-      alert("¡Simulación responsable guardada en base de datos! Avanzas hacia tu próxima insignia.");
+      syncProgressToDB(xp + 50, score);
+      saveSimulationTransaction('CREDITO_PERSONAL', 'PAGO_SANO');
+      alert("¡Simulación saludable! El historial y tu nueva Experiencia se guardaron exitosamente en la nube.");
     }
   };
 
@@ -98,7 +161,7 @@ function App() {
             <div className="hidden sm:flex items-center space-x-3">
               <div className="text-right">
                 <div className="text-sm font-bold text-gray-900">Ingreso: $3,500/sem</div>
-                <div className="text-xs text-green-600 font-medium">Capacidad Sólida</div>
+                <div className="text-xs text-green-600 font-medium">{userName}</div>
               </div>
             </div>
           </div>
@@ -116,23 +179,20 @@ function App() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {/* Score Card */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col items-center justify-center text-center">
                 <p className="text-gray-500 font-medium mb-2">Score de Salud Azteca</p>
                 <div className="relative">
                   <svg className="w-32 h-32 transform -rotate-90">
                     <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-gray-100" />
-                    <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="351" strokeDashoffset={351 - (351 * (score / 850))} className={score > 600 ? "text-green-500" : "text-yellow-500"} />
+                    <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="351" strokeDashoffset={351 - (351 * (score / 850))} className={score > 600 ? "text-green-500" : "text-red-500"} />
                   </svg>
                   <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-3xl font-bold text-gray-800">
                     {score}
                   </span>
                 </div>
-                <p className="mt-4 text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">Camino a Tarjeta de Crédito</p>
+                <p className="mt-4 text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full">Evaluación Constante</p>
               </div>
 
-              {/* Deuda Activa Card */}
-              {/* Nuevo elemento solicitado por el usuario */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col justify-center">
                 <p className="text-gray-500 font-medium mb-2">Estado de Cuenta</p>
                 <div className="mb-4">
@@ -151,19 +211,18 @@ function App() {
                 </div>
               </div>
 
-              {/* XP Card */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 flex flex-col justify-center">
                 <div className="flex justify-between items-end mb-2">
                   <div>
                     <p className="text-gray-500 font-medium">Nivel 2: Explorador Financiero</p>
                     <p className="text-3xl font-bold text-gray-900 mt-1">{xp} XP</p>
                   </div>
-                  <div className="h-8 w-8 bg-blue-100 rounded text-blue-600 flex items-center justify-center font-bold text-xs">[ICON_XP]</div>
+                  <div className="h-8 w-8 bg-blue-100 rounded text-blue-600 flex items-center justify-center font-bold text-xs">[ICON]</div>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-3 mb-2">
-                  <div className="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full" style={{ width: `${(xp / 2000) * 100}%` }}></div>
+                  <div className="bg-gradient-to-r from-blue-400 to-blue-600 h-3 rounded-full" style={{ width: `${Math.min((xp / 2000) * 100, 100)}%` }}></div>
                 </div>
-                <p className="text-xs text-gray-400 text-right">Faltan {2000 - xp} XP para Nivel Oro</p>
+                <p className="text-xs text-gray-400 text-right">Faltan {Math.max(2000 - xp, 0)} XP para Nivel Oro</p>
               </div>
             </div>
           </div>
@@ -184,24 +243,19 @@ function App() {
             {/* COPILOTO INTERVENCIÓN */}
             {showCopilot && (
               <div className="mb-8 animate-in zoom-in duration-300 relative overflow-hidden bg-gradient-to-br from-slate-900 to-blue-900 rounded-2xl shadow-2xl p-1">
-                <div className="absolute top-0 right-0 p-4 opacity-10">
-                  {/* Placeholder Background SVG */}
-                  <div className="w-24 h-24 bg-white opacity-20 rounded-full"></div>
-                </div>
                 <div className="bg-slate-900/80 backdrop-blur-md rounded-xl p-6 sm:p-8 flex flex-col md:flex-row items-center gap-6 relative z-10 border border-slate-700">
                   <div className="flex-shrink-0 animate-pulse bg-blue-500/20 p-4 rounded-full border 2 border-blue-400/50">
-                    <div className="text-blue-300 text-sm font-bold text-center">[ICON_BOT]</div>
+                    <div className="text-blue-300 text-sm font-bold text-center">[ALERTA]</div>
                   </div>
 
                   <div className="flex-1 w-full">
                     <h3 className="text-xl font-bold text-blue-400 mb-2 flex items-center">
-                      ALERTA DE ASFIXIA FINANCIERA
+                      ASFIXIA FINANCIERA DETECTADA
                     </h3>
                     <p className="text-slate-200 text-sm md:text-base leading-relaxed mb-4">
-                      Detecto que has programado un pago de <strong className="text-red-400">${Math.round(weeklyPayment)}/sem</strong>. Esto equivale a más del 40% de tu sueldo simulado ($3,500). En la vida real, un pago tan alto provocará recargos y arruinará tu historial.
+                      Detecto que has programado un pago de <strong className="text-red-400">${Math.round(weeklyPayment)}/sem</strong>. Esto equivale a más del 40% de tu sueldo simulado ($3,500).
                     </p>
 
-                    {/* Verificación de Riesgo - NUEVA FUNCIONALIDAD */}
                     <div className="bg-slate-800 p-4 rounded-lg border border-slate-600 mb-4">
                       <label className="flex items-start space-x-3 cursor-pointer">
                         <input
@@ -211,7 +265,7 @@ function App() {
                           onChange={(e) => setUnderstandRisk(e.target.checked)}
                         />
                         <span className="text-sm text-slate-300">
-                          Comprendo que este crédito supera mi capacidad de pago. Entiendo que continuar provocará una caída severa en mi Score Crediticio.
+                          Comprendo que este crédito supera mi capacidad de pago. Entiendo que mi Score Crediticio bajará Drásticamente en la Base de Datos.
                         </span>
                       </label>
                     </div>
@@ -252,7 +306,7 @@ function App() {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 transition-colors">
                   <h2 className="text-lg font-bold text-gray-800 mb-6 border-b pb-4">Ajustes del Préstamo</h2>
 
-                  {/* Monto con Input Tipo Número */}
+                  {/* Monto */}
                   <div className="mb-8">
                     <div className="flex justify-between items-end mb-4">
                       <label className="font-semibold text-gray-600 text-sm uppercase tracking-wide">Monto Solicitado</label>
@@ -284,7 +338,7 @@ function App() {
                     />
                   </div>
 
-                  {/* Plazo con Input Tipo Número */}
+                  {/* Plazo */}
                   <div className="mb-4">
                     <div className="flex justify-between items-end mb-4">
                       <label className="font-semibold text-gray-600 text-sm uppercase tracking-wide">Plazo a pagar</label>
@@ -314,25 +368,20 @@ function App() {
                       }}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
                     />
-                    <div className="flex justify-between text-xs text-gray-400 mt-2 font-medium">
-                      <span>Corto Plazo</span>
-                      <span>Largo Plazo</span>
-                    </div>
                   </div>
                 </div>
 
                 {!isOverleveraged && isTooLong && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5 flex items-start space-x-4">
-                    <div className="bg-yellow-200 w-8 h-8 rounded shrink-0 flex items-center justify-center text-yellow-800 text-xs font-bold">[ICON]</div>
+                    <div className="bg-yellow-200 w-8 h-8 rounded shrink-0 flex items-center justify-center text-yellow-800 text-xs font-bold">[TIP]</div>
                     <div>
                       <h4 className="font-bold text-yellow-800">Traductor del Asesor: CAT Elevado</h4>
                       <p className="text-sm text-yellow-700 mt-1">
-                        Elegir plazos extremadamente largos hará que des pagos chiquitos, pero nota en tu ticket cómo los "Intereses Pagados" suben muchísimo.
+                        Elegir plazos extremadamente largos hará que des pagos chiquitos, pero los "Intereses Estimados" suben muchísimo.
                       </p>
                     </div>
                   </div>
                 )}
-
               </div>
 
               <div className="lg:col-span-5">
