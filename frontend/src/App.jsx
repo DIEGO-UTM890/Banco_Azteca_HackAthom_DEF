@@ -398,7 +398,7 @@ function App() {
                       <div className="flex items-center gap-2 mb-4">
                         <div className="relative flex-1">
                           <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 font-bold">$</span>
-                          <input type="number" min={Math.min(minWeeklyPayment, currentDebt)} max={currentDebt} value={paymentInput} onChange={(e) => setPaymentInput(Number(e.target.value))} className="w-full font-bold text-xl bg-white border border-gray-300 rounded-xl py-3 pl-8 pr-4 focus:ring-green-500 focus:border-green-500 outline-none" />
+                          <input type="number" min={Math.min(minWeeklyPayment, currentDebt)} max={currentDebt} value={paymentInput === 0 ? '' : paymentInput} onChange={(e) => setPaymentInput(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0" className="w-full font-bold text-xl bg-white border border-gray-300 rounded-xl py-3 pl-8 pr-4 focus:ring-green-500 focus:border-green-500 outline-none"/>
                         </div>
                         <button onClick={simulatePayment} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all active:scale-95">Pagar Deuda</button>
                       </div>
@@ -454,7 +454,7 @@ function App() {
                 <div className="flex justify-center gap-2 mb-8">
                   <div className="relative w-64">
                     <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-green-700 font-black text-2xl">$</span>
-                    <input type="number" min="100" value={depositAmount} onChange={(e) => setDepositAmount(Number(e.target.value))} className="w-full font-black text-4xl bg-gray-50 border-2 border-green-200 text-gray-800 rounded-2xl py-4 pl-12 pr-4 text-center" />
+                    <input type="number" min="100" value={depositAmount === 0 ? '' : depositAmount} onChange={(e) => setDepositAmount(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0" className="w-full font-black text-4xl bg-gray-50 border-2 border-green-200 text-gray-800 rounded-2xl py-4 pl-12 pr-4 text-center"/>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3 mb-8">
